@@ -23,7 +23,7 @@ func Init(filePath string) error {
 
 // 初始化话题map
 func initTopicIndexMap(filePath string) error {
-	open, err := os.Open(filePath + "/topic")
+	open, err := os.Open(filePath + "topic")
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func initTopicIndexMap(filePath string) error {
 
 // 初始化评论map
 func initPostIndexMap(filePath string) error {
-	open, err := os.Open(filePath + "/post")
+	open, err := os.Open(filePath + "post")
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ module day2
 go 1.19
 
 require (
+	github.com/cloudwego/hertz v0.5.0
 	github.com/gin-gonic/gin v1.8.2
 	gorm.io/driver/mysql v1.4.5
 	gorm.io/gorm v1.24.3
@@ -28,6 +29,7 @@ require (
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

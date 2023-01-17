@@ -1,56 +1,72 @@
 package main
 
 import (
-	"encoding/json"
+	"day2/my/common"
+	"day2/my/entity"
+	"day2/my/service"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
-type Response struct {
-	Records []struct {
-		AppItemID      int64  `json:"appItemId"`
-		Img            string `json:"img"`
-		Bonus          bool   `json:"bonus"`
-		Title          string `json:"title"`
-		Type           int    `json:"type"`
-		OrderTypeTitle string `json:"orderTypeTitle"`
-		XyFamily       bool   `json:"xyFamily"`
-		New            bool   `json:"new"`
-		Quantity       int    `json:"quantity"`
-		GmtCreate      string `json:"gmtCreate"`
-		URL            string `json:"url"`
-		EmdDpmJSON     string `json:"emdDpmJson"`
-		StatusText     string `json:"statusText"`
-		Invalid        bool   `json:"invalid"`
-		EmdJSON        string `json:"emdJson"`
-	} `json:"records"`
-	Success     bool `json:"success"`
-	NextPage    bool `json:"nextPage"`
-	InvalidPage bool `json:"invalidPage"`
-}
+var bodyList []entity.UseBody
 
 func main() {
 
+	db, err := common.Start()
+	if err != nil {
+		log.Fatal("数据库连接失败")
+	}
+
 	r := gin.Default()
 
-	// 兑换状态查询
-	r.GET("/sugar/sg/di", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"商品": "20元滴滴快车券",
-			"状态": checkDiDiStatus(),
-			"来源": "******",
+	// 业务逻辑
+	v1 := r.Group("/v1")
+	{
+		// 添加账户
+		v1.GET("/add", func(c *gin.Context) {
+			com := c.Query("c")
+			share := c.Query("s")
+			name := c.Query("name")
+			db.Create(&entity.UseBody{Com: com, Share: share, Name: name})
+			c.JSON(http.StatusOK, tell(http.StatusOK, "成功加入消息队列", nil))
 		})
-	})
-
-	r.GET("/sugar/sg/hua", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"商品": "20元全国话费直冲",
-			"状态": checkHuaFeiStatus(),
-			"来源": "******",
+		// 获取账户
+		v1.GET("/get", func(c *gin.Context) {
+			db.Where("flag < ?", 1).Find(&bodyList)
+			c.JSON(http.StatusOK, tell(http.StatusOK, "获取账号成功", bodyList))
 		})
-	})
+		// 删除账号
+		v1.GET("/del", func(c *gin.Context) {
+			id := c.Query("id")
+			db.Delete(&entity.UseBody{}, id)
+			c.JSON(http.StatusOK, tell(http.StatusOK, "删除成功", nil))
+		})
+		// 任务执行
+		v1.GET("/com", func(c *gin.Context) {
+			for _, user := range bodyList {
+				// 执行
+				com := user.Com
+				for i := 0; i < 2000; i++ {
+					go service.Comment(com)
+				}
+			}
+			c.JSON(http.StatusOK, tell(http.StatusOK, "评论任务完成", nil))
+		})
+		v1.GET("/share", func(c *gin.Context) {
+			for _, user := range bodyList {
+				// 标记此账号
+				db.Model(&entity.UseBody{ID: user.ID}).Update("flag", 1)
+				// 执行
+				share := user.Share
+				for i := 0; i < 2500; i++ {
+					go service.Share(share)
+				}
+			}
+			c.JSON(http.StatusOK, tell(http.StatusOK, "分享任务完成", nil))
+		})
+	}
 
 	// 错误页面
 	r.NoRoute(func(c *gin.Context) {
@@ -64,49 +80,6 @@ func main() {
 }
 
 // 16522060405 213879xx
-func checkDiDiStatus() string {
-	client := &http.Client{}
-	req, _ := http.NewRequest("POST", "https://63373.activity-42.m.duiba.com.cn/crecord/getrecord?page=1", nil)
-	req.Header.Set("cookie", "wdata3=4fUQWjgWL7xFeAdRupn3tR1fTriaaS2JvBuRSkP79hrix7qef2xWMdmYaiUof6zvq6chVWVpZMk3isKZHxFFrkq3e9TgigxMvHDPh5EPhrRe6ey98mfoMhbWug99taifc; wdata4=+jWiDzXljaTwSZboXWfJBNOOP78PbtilAtYGWK88qpJ/plO++J5SK30DtwkGO5sVgxC13xjHXBRk7YT/rK1+nAZhCbimwNphrnxFztVJWjRViHRhlLkyFOmMmSnI8bVt;")
-	resp, _ := client.Do(req)
-	defer resp.Body.Close()
-	test, _ := ioutil.ReadAll(resp.Body)
-
-	var t Response
-	err := json.Unmarshal(test, &t)
-	if err != nil {
-		log.Fatal(err)
-	}
-	status := t.Records[0].StatusText
-
-	// 通知
-	if status != "<span>待审核</span>" {
-		sendMsg("滴滴快车20元卡券已发放!")
-	}
-	return status
-}
-
-func checkHuaFeiStatus() string {
-	client := &http.Client{}
-	req, _ := http.NewRequest("POST", "https://63373.activity-42.m.duiba.com.cn/crecord/getrecord?page=1", nil)
-	req.Header.Set("cookie", "wdata3=4fUQWjgWL7xFeAdRupn3tR1fTriaaS2JvBuRTxWXKWxhjghuA3sRzDjQJwfQSPq1LftJSgNevHfK3ZxSH6YE1vm92jYtDrXqDp5p1roAaBPhkgTZTJPP7ugoq2P3aFigU; wdata4=+jWiDzXljaTwSZboXWfJBPa+LgcIZOmhdWEJSwc23Fl/plO++J5SK30DtwkGO5sVgxC13xjHXBRk7YT/rK1+nJWuZBctINo9LCMvNZ/WC50cse+G6wdE1CE6tnhXwfdq; ")
-	resp, _ := client.Do(req)
-	defer resp.Body.Close()
-	test, _ := ioutil.ReadAll(resp.Body)
-
-	var t Response
-	err := json.Unmarshal(test, &t)
-	if err != nil {
-		log.Fatal(err)
-	}
-	status := t.Records[0].StatusText
-
-	// 通知
-	if status != "<span>待审核</span>" {
-		sendMsg("话费20元卡券已发放!")
-	}
-	return status
-}
 
 // 消息推送
 func sendMsg(content string) {
@@ -115,4 +88,15 @@ func sendMsg(content string) {
 		req, _ := http.NewRequest("GET", "https://api2.pushdeer.com/message/push?pushkey=PDU1083TBCC4lGtxaJ1TaTDyOuAiHgRAPNjahORg&text="+content, nil)
 		client.Do(req)
 	}()
+}
+
+// 统一信息封装
+func tell(code int, msg string, data any) gin.H {
+	return gin.H{
+		"code":   code,
+		"msg":    msg,
+		"data":   data,
+		"source": "方糖（上海）提供数据湖支持",
+		"time":   time.Now(),
+	}
 }

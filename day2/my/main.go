@@ -19,6 +19,7 @@ func main() {
 		log.Fatal("数据库连接失败")
 	}
 
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
 	// 业务逻辑

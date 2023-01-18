@@ -4,13 +4,18 @@ import (
 	"day2/my/common"
 	"day2/my/entity"
 	"day2/my/service"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 )
 
-var bodyList []entity.UseBody
+var (
+	bodyList []entity.UseBody
+	result   entity.Check
+)
 
 func main() {
 
@@ -19,6 +24,7 @@ func main() {
 		log.Fatal("数据库连接失败")
 	}
 
+	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
 	// 业务逻辑
@@ -28,8 +34,9 @@ func main() {
 		v1.GET("/add", func(c *gin.Context) {
 			com := c.Query("c")
 			share := c.Query("s")
-			name := c.Query("name")
-			db.Create(&entity.UseBody{Com: com, Share: share, Name: name})
+			name := c.Query("n")
+			wdata := c.Query("w")
+			db.Create(&entity.UseBody{Com: com, Share: share, Name: name, Wdata: wdata})
 			c.JSON(http.StatusOK, tell(http.StatusOK, "成功加入消息队列", nil))
 		})
 		// 获取账户
@@ -66,6 +73,27 @@ func main() {
 			}
 			c.JSON(http.StatusOK, tell(http.StatusOK, "分享任务完成", nil))
 		})
+		// 库存检查
+		v1.GET("/check", func(c *gin.Context) {
+			var checkList []entity.UseBody
+			q := make(map[string]entity.Check)
+			db.Where("wdata != ?", "").Find(&checkList)
+			for _, check := range checkList {
+				wdata := check.Wdata
+				name := check.Name
+
+				client := &http.Client{}
+				req, _ := http.NewRequest("GET", "https://63373.activity-42.m.duiba.com.cn/crecord/getrecord?page=1", nil)
+				req.Header.Add("cookie", wdata)
+				resp, _ := client.Do(req)
+				defer resp.Body.Close()
+				bodyText, _ := ioutil.ReadAll(resp.Body)
+				json.Unmarshal(bodyText, &result)
+				q[name] = result
+			}
+			c.JSON(http.StatusOK, tell(http.StatusOK, "库存检查", q))
+		})
+
 	}
 
 	// 错误页面

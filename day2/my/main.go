@@ -76,7 +76,7 @@ func main() {
 		// 库存检查
 		v1.GET("/check", func(c *gin.Context) {
 			var checkList []entity.UseBody
-			q := make(map[string]entity.Check)
+			q := make(map[string]any)
 			db.Where("wdata != ?", "").Find(&checkList)
 			for _, check := range checkList {
 				wdata := check.Wdata
@@ -89,7 +89,15 @@ func main() {
 				defer resp.Body.Close()
 				bodyText, _ := ioutil.ReadAll(resp.Body)
 				json.Unmarshal(bodyText, &result)
-				q[name] = result
+				couponList := result.Records
+				var userList []any
+				for _, item := range couponList {
+					if item.StatusText != "<span>待审核</span>" && item.StatusText != "<span>处理中</span>" {
+						continue
+					}
+					userList = append(userList, item)
+				}
+				q[name] = userList
 			}
 			c.JSON(http.StatusOK, tell(http.StatusOK, "库存检查", q))
 		})
@@ -106,8 +114,6 @@ func main() {
 
 	r.Run(":7779")
 }
-
-// 16522060405 213879xx
 
 // 消息推送
 func sendMsg(content string) {

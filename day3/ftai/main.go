@@ -23,15 +23,20 @@ func main() {
 	if err != nil {
 		log.Fatal("数据库连接失败")
 	}
+	log.Println("成功连接数据库")
 
-	db.AutoMigrate(&entity.User{})
+	gin.SetMode(gin.ReleaseMode)
+
+	log.Println("当前模式：发布模式")
 
 	r := gin.Default()
-	gin.SetMode(gin.DebugMode)
+
+	log.Println("当前框架：Hertz")
 
 	// 业务逻辑
 	userGroup := r.Group("/v1")
 	{
+		log.Println("路由组{v1/*}载入成功")
 		// 注册登录
 		userGroup.GET("/user/generateToken", func(c *gin.Context) {
 			username := c.Query("username")
@@ -85,7 +90,7 @@ func main() {
 			go c.JSON(http.StatusOK, tell(http.StatusOK, "扫描成功", resp.Data))
 		})
 	}
-
+	log.Println("成功监听8000端口")
 	r.Run(":8000")
 
 }

@@ -1,24 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-redis/redis"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
-
-var hdlList []string
 
 func main() {
 
 	rd := redisUtils()
 
-	for i := 1000; i <= 9999; i++ {
-		resp, _ := http.Get("http://card.haidilao.net/TzxMember/tzx/getCardDetailInfo?hykid=NC2019021" + strconv.Itoa(i))
+	for i := 100000; i <= 999999; i++ {
+		resp, _ := http.Get("http://card.haidilao.net/TzxMember/tzx/getCardDetailInfo?hykid=NC20190" + strconv.Itoa(i))
 		defer resp.Body.Close()
 		bodyText, _ := ioutil.ReadAll(resp.Body)
 		text := string(bodyText)
@@ -32,21 +28,11 @@ func main() {
 		if myPrice == "0.0" {
 			continue
 		}
-		t := "NC2019021" + strconv.Itoa(i) + "-" + myPrice
-		rd.SAdd("hdlCard", t)
-		hdlList = append(hdlList, t)
-		log.Println(i)
+		t := "NC20190" + strconv.Itoa(i) + "-" + myPrice
+		rd.SAdd("hdlOtherCard", t)
+		log.Println(t)
 	}
 
-	fmt.Println("扫描完成")
-
-	fileName := "./NC2019021.txt"
-	dfsFile, _ := os.Create(fileName)
-	defer dfsFile.Close()
-
-	for _, item := range hdlList {
-		dfsFile.WriteString(item + "\n")
-	}
 }
 
 func redisUtils() *redis.Client {

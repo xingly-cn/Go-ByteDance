@@ -75,6 +75,8 @@ func main() {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
+	rd := redisUtilser()
+
 	// 一期项目
 	userGroup := r.Group("/v1")
 	{
@@ -102,6 +104,17 @@ func main() {
 			defer resp.Body.Close()
 			result, _ := ioutil.ReadAll(resp.Body)
 			c.JSON(http.StatusOK, tell(http.StatusOK, "查询成功", string(result)))
+		})
+
+		// 得物森林
+		userGroup.GET("/dw/add/:u/:s/:x/:ss/:d", func(c *gin.Context) {
+			u := c.Param("u")
+			s := c.Param("s")
+			x := c.Param("x")
+			ss := c.Param("ss")
+			d := c.Param("d")
+			rd.SAdd("dwToken", u+"&"+s+"&"+x+"&"+ss+"&"+d)
+			c.JSON(http.StatusOK, tell(http.StatusOK, "插入成功", nil))
 		})
 	}
 

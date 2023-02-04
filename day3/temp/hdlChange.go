@@ -16,7 +16,7 @@ func main() {
 
 	//rd := redisUtil()
 
-	file, _ := os.OpenFile("./NC2019021.txt", os.O_RDONLY, 0666)
+	file, _ := os.OpenFile("./NC2019020.txt", os.O_RDONLY, 0666)
 	defer file.Close()
 
 	reader := bufio.NewReader(file)
@@ -27,9 +27,9 @@ func main() {
 			break
 		}
 		t := string(line)
-		log.Println(t)
-		//rd.RPush("hdlCard-2019021", t)		入库
-		//changeHdlPassword(string(list[0]))	修改密码
+		list := strings.Split(t, "-")
+		log.Println("当前 ->" + list[0])
+		changeHdlPassword(list[0]) //修改密码
 	}
 
 }
@@ -51,6 +51,7 @@ func changeHdlPassword(id string) {
 	bodyText, _ := ioutil.ReadAll(resp.Body)
 	result := string(bodyText)
 	if strings.Contains(result, "密码不正确") {
+		log.Println("密码错误")
 		return
 	}
 	log.Println(result, ck)

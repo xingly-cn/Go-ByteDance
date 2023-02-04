@@ -4,6 +4,9 @@ type UseBody struct {
 	ID    uint   `json:"id"`
 	Com   string `json:"com"`
 	Share string `json:"share"`
+	Like  string `json:"like"`
+	Vedio string `json:"vedio"`
+	Read  string `json:"read"`
 	Name  string `json:"name"`
 	Flag  uint   `json:"flag"`
 	Wdata string `json:"wdata"`

@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -64,11 +65,18 @@ type ScoreListResp struct {
 	} `json:"content"`
 }
 
+type LoginTokenResp struct {
+	Ret   int    `json:"ret"`
+	URL   string `json:"url"`
+	Token string `json:"token"`
+}
+
 var (
-	userResp      UserResp
-	scoreListResp ScoreListResp
-	tokenResp     TokenResp
-	token         string
+	userResp       UserResp
+	scoreListResp  ScoreListResp
+	tokenResp      TokenResp
+	token          string
+	loginTokenResp LoginTokenResp
 )
 
 func main() {
@@ -86,15 +94,20 @@ func main() {
 			c.JSON(http.StatusOK, tell(http.StatusOK, "获取Token", tokenResp))
 		})
 		userGroup.GET("/xh/get", func(c *gin.Context) {
-			num := c.Query("num")
-			res := findUserId(num)
-			res = append(res, "总计 -> "+num)
+			page := c.Query("page")
+			size := c.Query("size")
+			res := findUserId(page, size, rd)
+			res = append(res, "总计 -> "+page+"*"+size)
 			c.JSON(http.StatusOK, tell(http.StatusOK, "查询成功", res))
 		})
 		userGroup.GET("/xh/list", func(c *gin.Context) {
 			id := c.Query("id")
 			res := getScoreList(id)
 			c.JSON(http.StatusOK, tell(http.StatusOK, "查询成功", res))
+		})
+		userGroup.GET("/xh/login", func(c *gin.Context) {
+			t := loginUser(rd)
+			c.JSON(http.StatusOK, tell(http.StatusOK, "批量登录成功", t))
 		})
 
 		// 海底捞余额查询
@@ -114,6 +127,13 @@ func main() {
 			ss := c.Param("ss")
 			d := c.Param("d")
 			rd.SAdd("dwToken", u+"&"+s+"&"+x+"&"+ss+"&"+d)
+			c.JSON(http.StatusOK, tell(http.StatusOK, "插入成功", nil))
+		})
+
+		// 沪上阿姨
+		userGroup.GET("/shanghai/:token", func(c *gin.Context) {
+			u := c.Param("token")
+			rd.SAdd("沪上Token", u)
 			c.JSON(http.StatusOK, tell(http.StatusOK, "插入成功", nil))
 		})
 	}
@@ -142,12 +162,36 @@ func updateToken() string {
 	return tokenResp.AccessToken
 }
 
+func loginUser(rd *redis.Client) []string {
+	var tokenList []string
+	client := &http.Client{}
+
+	rdList, _ := rd.SMembers("徐汇文旅Token").Result()
+
+	for _, userId := range rdList {
+		loginTokenResp.Token = ""
+		user := strings.Split(userId, "-")
+		req, _ := http.NewRequest("GET", "https://xhwly.xh.sh.cn/api/v1/saas/queryUrl?userId="+user[0], nil)
+		req.Header.Set("Authorization", "bearer "+token)
+		resp, _ := client.Do(req)
+		defer resp.Body.Close()
+		resText, _ := ioutil.ReadAll(resp.Body)
+		json.Unmarshal(resText, &loginTokenResp)
+		log.Println(loginTokenResp)
+		tokenList = append(tokenList, userId+"-"+loginTokenResp.Token)
+	}
+	return tokenList
+}
+
 // 查询用户ID
-func findUserId(i string) []string {
+func findUserId(page string, size string, rd *redis.Client) []string {
+
+	updateToken()
+
 	client := &http.Client{}
 	var rlist []string
 
-	req, _ := http.NewRequest("GET", "https://xhwly.xh.sh.cn/api/v1/user/users?cur=1&size="+i, nil)
+	req, _ := http.NewRequest("GET", "https://xhwly.xh.sh.cn/api/v1/user/users?page="+page+"&size="+size, nil)
 
 	req.Header.Set("Authorization", "bearer "+token)
 	resp, _ := client.Do(req)
@@ -157,8 +201,9 @@ func findUserId(i string) []string {
 	json.Unmarshal(bodyText, &userResp)
 	list := userResp.Content
 	for _, item := range list {
-		if item.Bonus >= 5600 {
+		if item.Bonus >= 800 {
 			rlist = append(rlist, item.ID+"-"+strconv.Itoa(item.Bonus))
+			rd.SAdd("徐汇文旅Token", item.ID+"-"+strconv.Itoa(item.Bonus))
 		}
 	}
 	return rlist

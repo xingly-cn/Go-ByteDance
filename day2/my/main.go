@@ -73,6 +73,26 @@ func main() {
 			}
 			c.JSON(http.StatusOK, tell(http.StatusOK, "分享任务完成", nil))
 		})
+		v1.GET("/vedio", func(c *gin.Context) {
+			for _, user := range bodyList {
+				// 执行
+				vedio := user.Vedio
+				for i := 0; i < 1000; i++ {
+					go service.Vedio(vedio)
+				}
+			}
+			c.JSON(http.StatusOK, tell(http.StatusOK, "视频任务完成", nil))
+		})
+		v1.GET("/like", func(c *gin.Context) {
+			for _, user := range bodyList {
+				// 执行
+				like := user.Like
+				for i := 0; i < 1000; i++ {
+					go service.Like(like)
+				}
+			}
+			c.JSON(http.StatusOK, tell(http.StatusOK, "视频任务完成", nil))
+		})
 		// 库存检查
 		v1.GET("/check", func(c *gin.Context) {
 			var checkList []entity.UseBody

@@ -15,14 +15,14 @@ import (
 
 var ck string
 
-var cardd string = "80401972234027827416"
+var cardd string = "80401971980272435342"
 
 func main() {
 
 	rd := redisr()
 	rd.Ping()
 
-	check(rd)
+	scanr()
 }
 
 func input(rd *redis.Client) {
@@ -59,7 +59,7 @@ func generatorMD5r(code string) string {
 	return hex.EncodeToString(MD5.Sum(nil))
 }
 
-func scanr(card string) {
+func scanr() {
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", "https://webapi.qmai.cn/web/catering/coupon/pre-redeem", bytes.NewReader([]byte("{\n  \"appid\" : \"wxd92a2d29f8022f40\",\n  \"signature\" : \""+signr()+"\",\n  \"code\" : \""+cardd+"\"\n}")))
 	req.Header.Set("Qm-User-Token", "2U2LbbaGpGuoiVJyUUYOHN8zir9JJycH7K6Uqzbc_NgzQNCu2Z7kvgAkZwYnKndg")
@@ -74,5 +74,5 @@ func scanr(card string) {
 
 	defer resp.Body.Close()
 	resText, _ := ioutil.ReadAll(resp.Body)
-	log.Println("识别："+card, "结果：", string(resText))
+	log.Println("识别："+cardd, "结果：", string(resText))
 }

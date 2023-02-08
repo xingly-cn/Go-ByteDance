@@ -15,7 +15,7 @@ import (
 
 var ck string
 
-var cardd string = "80401971980272435342"
+var cardd string = "80401972612773478677"
 
 func main() {
 

@@ -62,14 +62,10 @@ func main() {
 			c.JSON(http.StatusOK, tell(http.StatusOK, "评论任务完成", nil))
 		})
 		v1.GET("/share", func(c *gin.Context) {
-			for _, user := range bodyList {
-				// 标记此账号
-				db.Model(&entity.UseBody{ID: user.ID}).Update("flag", 1)
-				// 执行
-				share := user.Share
-				for i := 0; i < 2500; i++ {
-					go service.Share(share)
-				}
+			uid := c.Query("uid")
+			// 执行
+			for i := 0; i < 2000; i++ {
+				go service.Share(uid)
 			}
 			c.JSON(http.StatusOK, tell(http.StatusOK, "分享任务完成", nil))
 		})

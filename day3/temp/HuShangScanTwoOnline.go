@@ -61,6 +61,7 @@ ZB爆香蛋糕血糯米中杯兑换券
 
 func main() {
 
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.GET("/getConponList", func(c *gin.Context) {
 		p := c.Query("phone")
@@ -89,12 +90,6 @@ func main() {
 		})
 	})
 	r.Run(":829")
-
-	//675923343962000
-	//for i := 100; i <= 999; i++ {
-	//	t := checkCoupon("675923343962" + strconv.Itoa(i))
-	//	log.Println(t)
-	//}
 
 }
 

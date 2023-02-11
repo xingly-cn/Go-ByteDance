@@ -15,18 +15,23 @@ import (
 
 var ck string
 
-var cardd string = "6000675921067059844"
+var cardd string = "82936621328796467911"
 
 //675920479867523 4563
 //675922440675927 4569
 //675923343962000
+
+/*
+
+
+ */
 
 func main() {
 
 	rd := redisr()
 	rd.Ping()
 
-	scanr()
+	input(rd)
 }
 
 func input(rd *redis.Client) {

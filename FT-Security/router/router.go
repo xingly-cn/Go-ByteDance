@@ -16,6 +16,7 @@ func InitRouter(r *gin.Engine) {
 		userGroup.GET("/changeMacAddress", controller.UserChangeMac) // 换绑
 		userGroup.GET("/list", controller.GetUserList)               // 管理员-用户列表
 		userGroup.GET("/black", controller.BlackUser)                // 黑名单
+		userGroup.GET("/times", controller.UserPayDays)              // 管理员-批量扣除
 	}
 
 	cardGroup := r.Group("/card")

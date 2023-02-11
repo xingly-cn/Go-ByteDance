@@ -10,9 +10,8 @@ import (
 func GetUserList(c *gin.Context) {
 	var users []proto.User
 	db.Find(&users)
-	if len(users) == 0 {
-		c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "无数据", nil))
-		return
+	for i := range users {
+		users[i].Password = "********"
 	}
 	c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "用户列表", users))
 }

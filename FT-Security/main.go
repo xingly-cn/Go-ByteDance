@@ -9,6 +9,7 @@ import (
 func main() {
 
 	controller.InitMySQL()
+	controller.InitRedis()
 
 	r := gin.Default()
 

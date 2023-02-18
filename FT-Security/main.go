@@ -10,6 +10,7 @@ func main() {
 
 	controller.InitMySQL()
 	controller.InitRedis()
+	controller.AdminIntoLocalMap()
 
 	r := gin.Default()
 

@@ -13,5 +13,6 @@ func GetUserList(c *gin.Context) {
 	for i := range users {
 		users[i].Password = "********"
 	}
+	RecordLog("管理员", "查看用户列表", "@all")
 	c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "用户列表", users))
 }

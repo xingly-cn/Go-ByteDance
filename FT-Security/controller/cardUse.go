@@ -35,5 +35,6 @@ func CardUse(c *gin.Context) {
 	user.UseDay += card.Score
 	db.Model(&proto.User{}).Where("username = ?", username).Updates(user)
 
+	RecordLog(username, "使用卡密->"+uid, "@all")
 	c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "充值成功", user))
 }

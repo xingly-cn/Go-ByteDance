@@ -3,9 +3,8 @@ package controller
 import (
 	"ft-security/proto"
 	"ft-security/utils"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func GetCardList(c *gin.Context) {
@@ -20,5 +19,6 @@ func GetCardList(c *gin.Context) {
 	}
 
 	db.Order("status").Find(&cards)
+	RecordLog("管理员", "查询卡密列表", "@all")
 	c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "卡密列表", cards))
 }

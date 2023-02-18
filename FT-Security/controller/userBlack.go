@@ -12,5 +12,6 @@ func BlackUser(c *gin.Context) {
 	username := c.Query("username")
 	db.Where("username = ?", username).First(&user)
 	db.Model(&proto.User{}).Where("username = ?", username).Update("status", false)
+	RecordLog("管理员", "加黑账号->"+username, "@all")
 	c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "加黑成功", user))
 }

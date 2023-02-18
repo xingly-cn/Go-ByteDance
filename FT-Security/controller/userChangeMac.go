@@ -27,5 +27,6 @@ func UserChangeMac(c *gin.Context) {
 
 	rd.Incr("user:" + username)
 
+	RecordLog(username, "换绑机器码->"+mac, "@all")
 	c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "解绑成功", user))
 }

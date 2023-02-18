@@ -19,6 +19,7 @@ func UserZc(c *gin.Context) {
 	db.Where("username = ?", username).First(&user)
 	if user.Username != "" {
 		c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "账号存在", nil))
+		RecordLog(username, "发起注册-账号存在", mac)
 		return
 	}
 
@@ -30,7 +31,10 @@ func UserZc(c *gin.Context) {
 
 	if user.ID == 0 {
 		c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "注册失败", nil))
+		RecordLog(username, "发起注册-注册失败", mac)
 		return
 	}
+
+	RecordLog(username, "发起注册-成功", mac)
 	c.JSON(http.StatusOK, utils.Tell(http.StatusOK, "注册成功", user))
 }

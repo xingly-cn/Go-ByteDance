@@ -53,7 +53,7 @@ func AdminIntoLocalMap() {
 	}
 }
 
-func RecordActivityAndUserLog(k string, v string, activityId string) {
+func RecordActivityAndUserLog(k string, v string, activityId string) string {
 	dict := proto.Dict{
 		K:          k,
 		V:          v,
@@ -61,17 +61,26 @@ func RecordActivityAndUserLog(k string, v string, activityId string) {
 		UseTime:    time.Now(),
 	}
 	db.Create(&dict)
+	err := rd.Incr(k) // 增加个人次数
+	return err.String()
 }
 
 func RecordActivityAndUserLogCheck(phone string, activityId string) bool {
+	log.Println("传入参数", phone, activityId)
 	var activity proto.Activity
-	var dictNum int64
 	db.Where("id = ?", activityId).First(&activity)
-	db.Model(proto.Dict{}).Where("k = ? and activity_id = ?", phone, activityId).Count(&dictNum)
+	dictNum, _ := rd.Get(phone).Int()
 
-	if dictNum < activity.Num || adminPhoneMap[phone] == "access" {
+	if dictNum == 0 {
 		return true
+	} else {
+		if adminPhoneMap[phone] == "access" {
+			log.Println(phone, "通过管理员测试", dictNum, activity.Num)
+			// 判断超出
+			if dictNum < activity.Num {
+				return true
+			}
+		}
 	}
-
 	return false
 }

@@ -27,10 +27,9 @@ type CouponGet struct {
 
 type CouponList struct {
 	Data []struct {
-		CouponSn      string      `json:"couponSn"`
-		CouponUseTime interface{} `json:"couponUseTime"`
-		CouponTitle   string      `json:"couponTitle"`
-		CanGiveAway   int         `json:"canGiveAway"`
+		CouponSn    string `json:"couponSn"`
+		CouponTitle string `json:"couponTitle"`
+		CanGiveAway int    `json:"canGiveAway"`
 	} `json:"data"`
 }
 
@@ -96,6 +95,14 @@ func main() {
 			"data": getListNum(),
 		})
 	})
+	r.GET("/getOne", func(c *gin.Context) {
+		key := c.Query("key")
+		phone := c.Query("phone")
+		c.JSON(200, gin.H{
+			"data": getOne(key, phone),
+		})
+	})
+
 	r.Run(":830")
 
 }
@@ -144,6 +151,49 @@ func getUserList() map[string]any {
 	return mp
 }
 
+func getOne(key string, p string) map[string]any {
+	mp := map[string]any{}
+	// 安全校验
+	rep, _ := http.Get("https://api.asugar.cn/ftauth/user/check?activityId=1&k=" + p)
+	defer rep.Body.Close()
+	res, _ := ioutil.ReadAll(rep.Body)
+	restext := string(res)
+	if strings.Contains(restext, "false") {
+		mp["警告"] = "今日你已经领取3次, 3天内超过9次封号3天处理"
+		return mp
+	}
+
+	l, _ := rd.SMembers("奶茶来啦").Result()
+
+	// 遍历手机号
+	for _, phone := range l {
+		t := getConponList(phone)
+		// 号里没有券，删除
+		if len(t.Data) == 0 {
+			rd.SRem("奶茶来啦", phone)
+			continue
+		}
+		for _, test := range t.Data {
+			if test.CanGiveAway == 0 && strings.Contains(test.CouponTitle, key) {
+				test.CouponTitle += " -方糖出品"
+				mp[phone] = test
+				mp["提取时间"] = time.Now().String()
+				mp["温馨提示"] = "每日3杯上限, 3天内累计9杯封号处理"
+
+				// 领取逻辑
+				shareCoupon(test.CouponSn, phone)
+				mp["领取状态"] = getCoupon(test.CouponSn, "4455", p).Msg
+
+				// 记录次数
+				http.Get("https://api.asugar.cn/ftauth/user/record?activityId=1&k=" + p + "&v=" + test.CouponSn)
+				return mp
+			}
+		}
+	}
+	mp["错误提示"] = "当你看到这条信息，说明这种奶茶无了...."
+	return mp
+}
+
 // 查询券信息
 func checkCoupon(ID string) CouponInfo {
 	var coInfo CouponInfo
@@ -165,7 +215,7 @@ func checkCoupon(ID string) CouponInfo {
 }
 
 // 兑换券到自己账号
-func getCoupon(id string, uid string, sj string) any {
+func getCoupon(id string, uid string, sj string) CouponGet {
 	var cpGet CouponGet
 	client := &http.Client{}
 

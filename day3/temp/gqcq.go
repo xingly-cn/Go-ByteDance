@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+/**
+广汽传祺
+*/
+
 type Phone struct {
 	Stat    bool   `json:"stat"`
 	Message string `json:"message"`

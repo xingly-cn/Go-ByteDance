@@ -3,9 +3,9 @@ module day3
 go 1.19
 
 require (
-	github.com/agclqq/goencryption v0.0.0-20220916113738-68f6c6ffc854
 	github.com/gin-gonic/gin v1.8.2
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/google/uuid v1.3.0
 	gorm.io/driver/mysql v1.4.5
 	gorm.io/gorm v1.24.3
 )

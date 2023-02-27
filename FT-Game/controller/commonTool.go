@@ -1,6 +1,9 @@
 package controller
 
 import (
+	"crypto/md5"
+	"fmt"
+	"ftGame/proto"
 	"github.com/go-redis/redis"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -19,8 +22,17 @@ func InitMySQL() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	db.AutoMigrate(proto.RecordDb{})
 }
 
 func InitRedis() {
-	rd = redis.NewClient(&redis.Options{Addr: "175.27.243.243:6379", Password: "213879", DB: 1})
+	rd = redis.NewClient(&redis.Options{Addr: "175.27.243.243:6379", Password: "213879", DB: 0})
+}
+
+func MD5Tool(id string) string {
+	data := []byte("null" + id + "1677481259221publicposcard20190924key") //切片
+	has := md5.Sum(data)
+	md5str := fmt.Sprintf("%x", has) //将[]byte转成16进制
+	return md5str
 }
